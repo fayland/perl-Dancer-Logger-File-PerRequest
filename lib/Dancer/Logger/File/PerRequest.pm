@@ -10,6 +10,7 @@ use base 'Dancer::Logger::Abstract';
 use Dancer::FileUtils qw(open_file);
 use Dancer::Config 'setting';
 use Dancer::Hook;
+use Dancer::SharedData;
 use IO::File;
 use Fcntl qw(:flock SEEK_END);
 use Scalar::Util ();
@@ -23,15 +24,17 @@ sub init {
     mkdir($logdir) unless -d $logdir;
 
     my $logfile_callback = setting('logfile_callback') || sub {
+        ## timestamp + pid + request->id
         my @d = localtime();
         my $file = sprintf('%04d%02d%02d%02d%02d%02d', $d[5] + 1900, $d[4] + 1, $d[3], $d[2], $d[1], $d[0]);
-        return $file . '_' . $$ . '.log';
+        my $request_id = Dancer::SharedData->request ? Dancer::SharedData->request->id : '';
+        return $file . '-' . $$ . '-' . $request_id . '.log';
     };
     $self->{logfile_callback} = $logfile_callback;
 
     # per request
     Scalar::Util::weaken $self;
-    Dancer::Hook->new('on_route_exception' => sub {
+    Dancer::Hook->new('on_reset_state' => sub {
         undef $self->{fh};
     });
 }
@@ -120,7 +123,7 @@ Dancer::Logger::File::PerRequest is a per-request file-based logging engine for 
 
 =head2 logfile_callback
 
-By default, it will be generating YYYYMMDDHHMMSS_$pid.log under logs of application dir.
+By default, it will be generating YYYYMMDDHHMMSS-$pid-$request_id.log under logs of application dir.
 
 the stuff can be configured as
 

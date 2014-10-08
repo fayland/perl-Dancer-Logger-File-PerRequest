@@ -36,7 +36,7 @@
       },
       "runtime" : {
          "requires" : {
-            "Dancer" : "0",
+            "Dancer" : "1.3113",
             "Scalar::Util" : "0",
             "perl" : "5.008005"
          }

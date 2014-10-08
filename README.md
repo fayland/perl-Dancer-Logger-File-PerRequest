@@ -16,7 +16,7 @@ Dancer::Logger::File::PerRequest is a per-request file-based logging engine for 
 
 ## logfile\_callback
 
-By default, it will be generating YYYYMMDDHHMMSS\_$pid.log under logs of application dir.
+By default, it will be generating YYYYMMDDHHMMSS-$pid-$request\_id.log under logs of application dir.
 
 the stuff can be configured as
 
