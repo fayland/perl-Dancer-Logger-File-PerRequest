@@ -35,6 +35,7 @@ sub init {
     # per request
     Scalar::Util::weaken $self;
     Dancer::Hook->new('on_reset_state' => sub {
+        close($self->{fh}); # close
         undef $self->{fh};
     });
 }
