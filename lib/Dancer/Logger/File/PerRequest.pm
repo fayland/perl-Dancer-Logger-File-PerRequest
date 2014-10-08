@@ -128,7 +128,7 @@ the stuff can be configured as
 
 =item * per pid
 
-    setting 'logfile_callback' => sub {
+    set 'logfile_callback' => sub {
         return $$ . '.log';
     };
 
@@ -136,7 +136,7 @@ will genereate $pid.log
 
 =item * per hour
 
-    setting 'logfile_callback' => sub {
+    set 'logfile_callback' => sub {
         my @d = localtime();
         my $file = sprintf('%04d%02d%02d%02d', $d[5] + 1900, $d[4] + 1, $d[3], $d[2]);
         return $file . '.log';
