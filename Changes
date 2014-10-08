@@ -1,8 +1,9 @@
 Revision history for Dancer-Logger-File-PerRequest
 
 {{$NEXT}}
-        - change the hook to on_reset_state
+        - change the hook to after
         - add request->id to default logfile_callback (more unique)
+        - add hooks before_file_per_request_close/after_file_per_request_close
 
 0.01  2014-10-08 14:35:49 CST
         - Initial release

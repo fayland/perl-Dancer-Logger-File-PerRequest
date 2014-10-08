@@ -10,10 +10,15 @@ use base 'Dancer::Logger::Abstract';
 use Dancer::FileUtils qw(open_file);
 use Dancer::Config 'setting';
 use Dancer::Hook;
+use Dancer::Factory::Hook;
 use Dancer::SharedData;
 use IO::File;
 use Fcntl qw(:flock SEEK_END);
 use Scalar::Util ();
+
+Dancer::Factory::Hook->instance->install_hooks(
+    qw/before_file_per_request_close after_file_per_request_close/
+);
 
 sub init {
     my $self = shift;
@@ -34,9 +39,14 @@ sub init {
 
     # per request
     Scalar::Util::weaken $self;
-    Dancer::Hook->new('on_reset_state' => sub {
+    Dancer::Hook->new('after' => sub {
+        return unless $self->{fh};
+
+        Dancer::Factory::Hook->execute_hooks('before_file_per_request_close', $self->{fh}, $self->{logfile});
         close($self->{fh}); # close
         undef $self->{fh};
+        Dancer::Factory::Hook->execute_hooks('after_file_per_request_close', $self->{logfile}, Dancer::SharedData->response);
+        undef $self->{logfile};
     });
 }
 
@@ -60,6 +70,7 @@ sub _log {
         eval { $fh->autoflush };
 
         $self->{fh} = $fh;
+        $self->{logfile} = $logfile;
     }
 
     return unless(ref $fh && $fh->opened);
@@ -122,7 +133,9 @@ Dancer::Logger::File::PerRequest - per-request file-based logging engine for Dan
 
 Dancer::Logger::File::PerRequest is a per-request file-based logging engine for Dancer.
 
-=head2 logfile_callback
+=head2 SETTINGS
+
+=head3 logfile_callback
 
 By default, it will be generating YYYYMMDDHHMMSS-$pid-$request_id.log under logs of application dir.
 
@@ -152,9 +165,33 @@ will do file as YYYYMMDDHH.log
 
 it's quite flexible that you can configure it as daily or daily + pid + server or whatever.
 
-=head2 log_path
+=head3 log_path
 
 the log path, same as L<Dancer::Logger::File>, default to $appdir/logs
+
+=head2 HOOKS
+
+=head3 before_file_per_request_close
+
+    hook 'before_file_per_request_close' => sub {
+        my ($fh, $logfile) = @_;
+
+        print $fh "# END on " . scalar(localtime()) . "\n";
+    };
+
+=head3 after_file_per_request_close
+
+    hook 'after_file_per_request_close' => sub {
+        my ($logfile, $response) = @_;
+
+        # response as Dancer::Response
+        if ($response->status >= 500) { ## server error
+            # move file to error dir
+        } else {
+            # just rm it?
+            unlink($logfile);
+        }
+    };
 
 =head1 AUTHOR
 
